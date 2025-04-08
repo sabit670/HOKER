@@ -14,7 +14,6 @@
 
     h1 {
       font-size: 36px;
-      margin-bottom: 10px;
       color: #00e676;
     }
 
@@ -57,8 +56,7 @@
       border: 1px solid #00ff66;
       border-radius: 10px;
       max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 30px auto 0;
       text-align: left;
       display: none;
     }
@@ -97,10 +95,10 @@
 <body>
 
   <h1>HOKER HD</h1>
-  <h2>Gmail Spoof Tool </h2>
+  <h2>Gmail Spoof Tool (Offline Mode)</h2>
 
   <input type="text" id="gmail" placeholder="target@gmail.com">
-  <button onclick="getSpoofedGmails()">Spoof Now</button>
+  <button onclick="generateSpoof()">Generate</button>
 
   <div id="output">
     <button class="copy-btn" onclick="copyResult()">Copy JSON</button>
@@ -113,33 +111,63 @@
   </div>
 
   <script>
-    function getSpoofedGmails() {
+    function validateEmail(email) {
+      return /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(email);
+    }
+
+    function generateVariations(local, domain, count = 50) {
+      const variations = new Set();
+      const len = local.length;
+
+      while (variations.size < count) {
+        let modified = local;
+        const positions = [];
+
+        const dotCount = Math.floor(Math.random() * 3) + 1;
+        while (positions.length < dotCount) {
+          const pos = Math.floor(Math.random() * (len - 1)) + 1;
+          if (!positions.includes(pos)) positions.push(pos);
+        }
+
+        positions.sort((a, b) => b - a);
+        for (const pos of positions) {
+          modified = modified.slice(0, pos) + '.' + modified.slice(pos);
+        }
+
+        variations.add(modified + '@' + domain);
+      }
+
+      return Array.from(variations);
+    }
+
+    function generateSpoof() {
       const gmail = document.getElementById('gmail').value.trim();
       if (!gmail) return alert("Enter a Gmail address!");
 
-      if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(gmail)) {
+      if (!validateEmail(gmail)) {
         alert("Invalid Gmail format!");
         return;
       }
 
-      const apiURL = `https://lmnx9.xyz/zuyan/spoof.php?gmail=${encodeURIComponent(gmail)}`;
-      document.getElementById('resultText').innerText = "Loading...";
-      document.getElementById('output').style.display = 'block';
+      const [local, domain] = gmail.split('@');
+      const spoofed = generateVariations(local, domain);
 
-      fetch(apiURL)
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById('resultText').innerText = JSON.stringify(data, null, 2);
-        })
-        .catch(err => {
-          document.getElementById('resultText').innerText = "Error: " + err;
-        });
+      const result = {
+        status: "success",
+        original: gmail,
+        total_clones: spoofed.length,
+        clones: spoofed,
+        author: "ZUYAN TEAM - UCHIHAS_EMPIRE"
+      };
+
+      document.getElementById('resultText').innerText = JSON.stringify(result, null, 2);
+      document.getElementById('output').style.display = 'block';
     }
 
     function copyResult() {
       const text = document.getElementById('resultText').innerText;
       navigator.clipboard.writeText(text).then(() => {
-        alert("Copied!");
+        alert("Copied to clipboard!");
       });
     }
   </script>
